@@ -35,7 +35,19 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
     # TODO: finish this function!
-    raise NotImplementedError
+    # raise NotImplementedError
+
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves - opp_moves)
+
+
 
 
 def custom_score_2(game, player):
@@ -213,7 +225,126 @@ class MinimaxPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         # TODO: finish this function!
-        raise NotImplementedError
+        # raise NotImplementedError
+
+        # get legal moves (active player = default)
+        legalMoves = game.get_legal_moves()
+        
+        # define our best move/score variables 
+        bestMove = (-1,-1)
+        bestScore = float("inf")
+
+        # iterate the legal moves list to determine the best move
+        for move in legalMoves:
+            
+            # apply the current move in the list
+            forecastedGame = game.forecast_move(move)
+
+            # recursively expand this node to the next depth
+            forecastedScore = self.MinValue(forecastedGame, depth-1);
+
+            # update best score/move if the current move is better
+            if forecastedScore > bestScore:
+                bestScore = forecastedScore
+                bestMove = move      
+                
+        # return the best move
+        return bestMove
+    
+
+    def MaxValue(self, game, depth):
+        """
+        Parameters
+        ----------
+        game : isolation.Board
+            An instance of the Isolation game `Board` class representing the
+            current game state
+
+        depth : int
+            Depth is an integer representing the maximum number of plies to
+            search in the game tree before aborting
+
+        Returns
+        -------
+        float
+            The max score of the current search branch
+
+        Notes
+        -----
+        """
+
+        # check that we still have time
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # get the actions for this state
+        legalMoves = game.get_legal_moves()        
+
+        # terminal tests
+        if not legalMoves:
+            return float("-inf")
+
+        if depth == 0:
+            return  float("-inf") #self.score(game,self)    
+
+        # iterate the legal moves list to determine the max score    
+        for move in legalMoves:
+
+            # make a copy of the game with the current move
+            forecastedGame = game.forecast_move(move)
+                
+            # get the score with the forecasted move    
+            value = max(self.score(forecastedGame,self), self.MinValue(forecastedGame, depth-1)) 
+
+        return value    
+
+    def MinValue(self, game, depth):
+
+        """
+        Parameters
+        ----------
+        game : isolation.Board
+            An instance of the Isolation game `Board` class representing the
+            current game state
+
+        depth : int
+            Depth is an integer representing the maximum number of plies to
+            search in the game tree before aborting
+
+        Returns
+        -------
+        float
+            The min score of the current search branch
+
+        Notes
+        -----
+        """
+
+        # check that we still have time
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # get the actions for this state
+        legalMoves = game.get_legal_moves()        
+
+        # terminal test for legal moves
+        if not legalMoves:
+            return float("inf")
+
+        # terminal test for depth    
+        if depth == 0:
+            return float("inf") #self.score(game,self)
+
+        # iterate the legal moves list to determine the min score
+        for move in legalMoves:
+
+            # make a copy of the game with the current move
+            forecastedGame = game.forecast_move(move)
+                
+            # get the score with the forecasted move    
+            value = min(self.score(forecastedGame, self), self.MaxValue(forecastedGame, depth-1)) 
+
+        return value        
 
 
 class AlphaBetaPlayer(IsolationPlayer):
