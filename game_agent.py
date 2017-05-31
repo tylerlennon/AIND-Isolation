@@ -292,6 +292,9 @@ class MinimaxPlayer(IsolationPlayer):
         #if not legalMoves or depth == 0:
         #    return self.score(game,self)
 
+        # initialize the variable for the best score
+        maxScore = float("-inf")
+
         # iterate the legal moves list to determine the max score    
         for move in legalMoves:
 
@@ -299,9 +302,13 @@ class MinimaxPlayer(IsolationPlayer):
             forecastedGame = game.forecast_move(move)
                 
             # get the score with the forecasted move    
-            value = max(self.score(forecastedGame,self), self.MinValue(forecastedGame, depth-1)) 
+            value = max(self.score(forecastedGame,self), self.MinValue(forecastedGame, depth-1))
 
-        return value    
+            # update best score
+            if value > maxScore:
+                maxScore = value 
+
+        return maxScore    
 
     def MinValue(self, game, depth):
 
@@ -342,6 +349,10 @@ class MinimaxPlayer(IsolationPlayer):
         if  depth == 0:
             return self.score(game,self)
 
+        
+        # initialize the variable for the best score
+        minScore = float("inf")
+
         # iterate the legal moves list to determine the min score
         for move in legalMoves:
 
@@ -351,7 +362,11 @@ class MinimaxPlayer(IsolationPlayer):
             # get the score with the forecasted move    
             value = min(self.score(forecastedGame, self), self.MaxValue(forecastedGame, depth-1)) 
 
-        return value        
+            # update best score
+            if value < minScore:
+                minScore = value
+
+        return minScore        
 
 
 class AlphaBetaPlayer(IsolationPlayer):
