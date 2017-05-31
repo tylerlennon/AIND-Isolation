@@ -232,7 +232,7 @@ class MinimaxPlayer(IsolationPlayer):
         
         # define our best move/score variables 
         bestMove = (-1,-1)
-        bestScore = float("inf")
+        bestScore = float("-inf")
 
         # iterate the legal moves list to determine the best move
         for move in legalMoves:
@@ -240,8 +240,8 @@ class MinimaxPlayer(IsolationPlayer):
             # apply the current move in the list
             forecastedGame = game.forecast_move(move)
 
-            # recursively expand this node to the next depth
-            forecastedScore = self.MinValue(forecastedGame, depth-1);
+            # recursively expand this node to the next depth returning the best score
+            forecastedScore = max(self.score(forecastedGame,self),self.MinValue(forecastedGame, depth-1));
 
             # update best score/move if the current move is better
             if forecastedScore > bestScore:
@@ -282,10 +282,15 @@ class MinimaxPlayer(IsolationPlayer):
 
         # terminal tests
         if not legalMoves:
-            return float("-inf")
+            #return #float("-inf")
+            #return self.score(game,self)
+            return game.utility(self) 
 
         if depth == 0:
-            return  float("-inf") #self.score(game,self)    
+            return  self.score(game,self)    
+
+        #if not legalMoves or depth == 0:
+        #    return self.score(game,self)
 
         # iterate the legal moves list to determine the max score    
         for move in legalMoves:
@@ -327,13 +332,15 @@ class MinimaxPlayer(IsolationPlayer):
         # get the actions for this state
         legalMoves = game.get_legal_moves()        
 
-        # terminal test for legal moves
+        # terminal tests
         if not legalMoves:
-            return float("inf")
+            #return #float("-inf")
+            #return self.score(game,self)
+            return game.utility(self) 
 
         # terminal test for depth    
-        if depth == 0:
-            return float("inf") #self.score(game,self)
+        if  depth == 0:
+            return self.score(game,self)
 
         # iterate the legal moves list to determine the min score
         for move in legalMoves:
