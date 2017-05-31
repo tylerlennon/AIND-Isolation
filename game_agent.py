@@ -230,18 +230,19 @@ class MinimaxPlayer(IsolationPlayer):
         # get legal moves (active player = default)
         legalMoves = game.get_legal_moves()
         
-        # define our best move/score variables 
+        # initialize the best move/score variables 
         bestMove = (-1,-1)
         bestScore = float("-inf")
 
         # iterate the legal moves list to determine the best move
         for move in legalMoves:
             
-            # apply the current move in the list
+            # make a copy of the game with the current move
             forecastedGame = game.forecast_move(move)
 
             # recursively expand this node to the next depth returning the best score
-            forecastedScore = max(self.score(forecastedGame,self),self.MinValue(forecastedGame, depth-1));
+            # the min MinValue/MaxValue helper funcitons alternate in their recursive calls 
+            forecastedScore = self.MinValue(forecastedGame, depth-1)    
 
             # update best score/move if the current move is better
             if forecastedScore > bestScore:
@@ -271,9 +272,14 @@ class MinimaxPlayer(IsolationPlayer):
 
         Notes
         -----
+        - This helper function calls the MinValue methode to reflect the best value for the opposition score
+        - The recursive calls for both of these functions is terminated by:
+                1. Time threshold expiry
+                2. No more legal moves are available
+                3. Depth has been reached
         """
 
-        # check that we still have time
+        # terminal test: time has expired
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
@@ -282,15 +288,11 @@ class MinimaxPlayer(IsolationPlayer):
 
         # terminal tests
         if not legalMoves:
-            #return #float("-inf")
-            #return self.score(game,self)
             return game.utility(self) 
 
+        # terminal test: we have reached our depth limit
         if depth == 0:
             return  self.score(game,self)    
-
-        #if not legalMoves or depth == 0:
-        #    return self.score(game,self)
 
         # initialize the variable for the best score
         maxScore = float("-inf")
@@ -302,7 +304,7 @@ class MinimaxPlayer(IsolationPlayer):
             forecastedGame = game.forecast_move(move)
                 
             # get the score with the forecasted move    
-            value = max(self.score(forecastedGame,self), self.MinValue(forecastedGame, depth-1))
+            value = self.MinValue(forecastedGame, depth-1)
 
             # update best score
             if value > maxScore:
@@ -330,22 +332,25 @@ class MinimaxPlayer(IsolationPlayer):
 
         Notes
         -----
+        - This helper function calls the MaxValue methode to reflect the best value for the initial player score
+        - The recursive calls for both of these functions is terminated by:
+                1. Time threshold expiry
+                2. No more legal moves are available
+                3. Depth has been reached
         """
 
-        # check that we still have time
+        # terminal test: time has expired
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
         # get the actions for this state
         legalMoves = game.get_legal_moves()        
 
-        # terminal tests
+        # terminal test: no legal moves left
         if not legalMoves:
-            #return #float("-inf")
-            #return self.score(game,self)
             return game.utility(self) 
 
-        # terminal test for depth    
+        # terminal test: we have reached our depth limit     
         if  depth == 0:
             return self.score(game,self)
 
@@ -360,7 +365,7 @@ class MinimaxPlayer(IsolationPlayer):
             forecastedGame = game.forecast_move(move)
                 
             # get the score with the forecasted move    
-            value = min(self.score(forecastedGame, self), self.MaxValue(forecastedGame, depth-1)) 
+            value = self.MaxValue(forecastedGame, depth-1)
 
             # update best score
             if value < minScore:
