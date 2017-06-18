@@ -413,7 +413,43 @@ class AlphaBetaPlayer(IsolationPlayer):
         self.time_left = time_left
 
         # TODO: finish this function!
-        raise NotImplementedError
+        #raise NotImplementedError
+
+        # Initialize the best move so that this function returns something
+        # in case the search fails due to timeout
+        # instead of returning the default -1,-1 default lets return a random legal move
+        
+        # get list of legal moves
+        legalMoves = game.get_legal_moves()
+
+        # check if there are legal moves
+        if not legalMoves:
+            return (-1,-1)
+
+        # get a random position
+        randomMovePosition = random.randint(0,len(legalMoves)-1)
+        
+        # set the best move with a random legal move
+        best_move = legalMoves[randomMovePosition]  #(-1, -1)
+
+        #iterative deepening depth variable
+        depth = 1
+
+        try:
+            # The try/except block will automatically catch the exception
+            # raised when the timer is about to expire.
+            #return self.alpahbeta(game, self.search_depth)
+
+            while True:
+                best_move = self.alphabeta(game, depth)
+                depth  = depth + 1;
+
+        except SearchTimeout:
+            pass  # Handle any actions required after timeout as needed
+
+        # Return the best move from the last completed search iteration
+        return best_move
+
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -464,4 +500,184 @@ class AlphaBetaPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         # TODO: finish this function!
-        raise NotImplementedError
+        #raise NotImplementedError
+
+        # get legal moves (active player = default)
+        legalMoves = game.get_legal_moves()
+        
+        # terminal tests
+        if not legalMoves:
+            return game.utility(self) 
+
+        # terminal test: we have reached our depth limit
+        if depth == 0:
+            return  self.score(game,self)
+
+        # initialize the best move/score variables 
+        bestMove = (-1,-1)
+        bestScore = float("-inf")
+
+        # iterate the legal moves list to determine the best move
+        for move in legalMoves:
+            
+            # make a copy of the game with the current move
+            forecastedGame = game.forecast_move(move)
+
+            # recursively expand this node to the next depth returning the best score
+            # the min MinValue/MaxValue helper funcitons alternate in their recursive calls 
+            forecastedScore = self.MinValue(forecastedGame, depth, alpha, beta)    
+
+            # update best score/move if the current move is better
+            if forecastedScore > bestScore:
+                bestScore = forecastedScore
+                bestMove = move 
+
+            if bestScore >= beta:
+                return bestMove   
+
+            # update the alpha
+            alpha = max(alpha, bestScore)     
+    
+        # return the best move
+        return bestMove
+
+    def MaxValue(self, game, depth, alpha, beta):
+        """
+        Parameters
+        ----------
+        game : isolation.Board
+            An instance of the Isolation game `Board` class representing the
+            current game state
+
+        depth : int
+            Depth is an integer representing the maximum number of plies to
+            search in the game tree before aborting
+        
+        alpha : float
+            Alpha limits the lower bound of search on minimizing layers
+
+        beta : float
+            Beta limits the upper bound of search on maximizing layers
+
+
+        Returns
+        -------
+        float
+            The max score of the current search branch
+
+        Notes
+        -----
+        - This helper function calls the MinValue methode to reflect the best value for the opposition score
+        - The recursive calls for both of these functions is terminated by:
+                1. Time threshold expiry
+                2. No more legal moves are available
+                3. Depth has been reached
+        """
+
+        # terminal test: time has expired
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # get the actions for this state
+        legalMoves = game.get_legal_moves()        
+
+        # terminal tests
+        if not legalMoves:
+            return game.utility(self) 
+
+        # terminal test: we have reached our depth limit
+        if depth == 0:
+            return  self.score(game,self)    
+
+        # initialize the variable for the best score
+        value = float("-inf")
+
+        # iterate the legal moves list to determine the max score    
+        for move in legalMoves:    
+
+            # make a copy of the game with the current move
+            forecastedGame = game.forecast_move(move)
+                
+            # get the max value score with the forecasted move    
+            value = max(value, self.MinValue(forecastedGame, depth-1, alpha, beta))
+
+            # evuate alpha/beta values
+            if value >= beta:
+                return value
+
+            # update the alpha
+            alpha = max(alpha, value)    
+            
+        return value
+
+    
+    def MinValue(self, game, depth, alpha, beta):
+
+        """
+        Parameters
+        ----------
+        game : isolation.Board
+            An instance of the Isolation game `Board` class representing the
+            current game state
+
+        depth : int
+            Depth is an integer representing the maximum number of plies to
+            search in the game tree before aborting
+
+        alpha : float
+            Alpha limits the lower bound of search on minimizing layers
+
+        beta : float
+            Beta limits the upper bound of search on maximizing layers
+
+        Returns
+        -------
+        float
+            The min score of the current search branch
+
+        Notes
+        -----
+        - This helper function calls the MaxValue methode to reflect the best value for the initial player score
+        - The recursive calls for both of these functions is terminated by:
+                1. Time threshold expiry
+                2. No more legal moves are available
+                3. Depth has been reached
+        """
+
+        # terminal test: time has expired
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        # get the actions for this state
+        legalMoves = game.get_legal_moves()        
+
+        # terminal test: no legal moves left
+        if not legalMoves:
+            return game.utility(self) 
+
+        # terminal test: we have reached our depth limit     
+        if  depth == 0:
+            return self.score(game,self)
+
+        
+        # initialize the variable for the best score
+        value = float("inf")
+
+        # iterate the legal moves list to determine the min score
+        for move in legalMoves:
+
+            # make a copy of the game with the current move
+            forecastedGame = game.forecast_move(move)
+                
+            # get the score with the forecasted move    
+            value = min(value, self.MaxValue(forecastedGame, depth-1, alpha, beta))
+
+            # evaluate the alpha/beta values
+            if value <= alpha:
+                return value
+
+            beta = min(beta, value)
+                
+            
+        return value        
+    
