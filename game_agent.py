@@ -502,21 +502,22 @@ class AlphaBetaPlayer(IsolationPlayer):
         # TODO: finish this function!
         #raise NotImplementedError
 
-        # get legal moves (active player = default)
-        legalMoves = game.get_legal_moves()
-        
-        # terminal tests
-        if not legalMoves:
-            return game.utility(self) 
-
-        # terminal test: we have reached our depth limit
-        if depth == 0:
-            return  self.score(game,self)
-
         # initialize the best move/score variables 
         bestMove = (-1,-1)
         bestScore = float("-inf")
 
+        # get legal moves (active player = default)
+        legalMoves = game.get_legal_moves()
+        
+        # terminal test: no legal moves left - return default
+        if not legalMoves:
+            return bestMove 
+
+        # terminal test: we have reached our depth limit - return the first move 
+        if depth == 0:
+            return  legalMove[0] 
+
+        
         # iterate the legal moves list to determine the best move
         for move in legalMoves:
             
@@ -525,17 +526,18 @@ class AlphaBetaPlayer(IsolationPlayer):
 
             # recursively expand this node to the next depth returning the best score
             # the min MinValue/MaxValue helper funcitons alternate in their recursive calls 
-            forecastedScore = self.MinValue(forecastedGame, depth, alpha, beta)    
+            forecastedScore = self.MinValue(forecastedGame, depth-1, alpha, beta)    
 
-            # update best score/move if the current move is better
+            # update best score/move if the forecasted move is better
             if forecastedScore > bestScore:
                 bestScore = forecastedScore
                 bestMove = move 
 
+            # update teh beta limit
             if bestScore >= beta:
                 return bestMove   
 
-            # update the alpha
+            # update the alpha limit
             alpha = max(alpha, bestScore)     
     
         # return the best move
@@ -581,11 +583,11 @@ class AlphaBetaPlayer(IsolationPlayer):
         # get the actions for this state
         legalMoves = game.get_legal_moves()        
 
-        # terminal tests
+        # terminal test: no legal moves left - return the utility function value
         if not legalMoves:
             return game.utility(self) 
 
-        # terminal test: we have reached our depth limit
+        # terminal test: we have reached our depth limit - return the current score value
         if depth == 0:
             return  self.score(game,self)    
 
@@ -601,11 +603,11 @@ class AlphaBetaPlayer(IsolationPlayer):
             # get the max value score with the forecasted move    
             value = max(value, self.MinValue(forecastedGame, depth-1, alpha, beta))
 
-            # evuate alpha/beta values
+            # prune the rest of the nodes (moves)
             if value >= beta:
                 return value
 
-            # update the alpha
+            # update the alpha limit
             alpha = max(alpha, value)    
             
         return value
@@ -651,15 +653,14 @@ class AlphaBetaPlayer(IsolationPlayer):
         # get the actions for this state
         legalMoves = game.get_legal_moves()        
 
-        # terminal test: no legal moves left
+        # terminal test: no legal moves left - return the utility function value
         if not legalMoves:
             return game.utility(self) 
 
-        # terminal test: we have reached our depth limit     
+        # terminal test: we have reached our depth limit - return the current score value    
         if  depth == 0:
             return self.score(game,self)
 
-        
         # initialize the variable for the best score
         value = float("inf")
 
@@ -672,10 +673,11 @@ class AlphaBetaPlayer(IsolationPlayer):
             # get the score with the forecasted move    
             value = min(value, self.MaxValue(forecastedGame, depth-1, alpha, beta))
 
-            # evaluate the alpha/beta values
+            # prune the rest of the nodes (moves)
             if value <= alpha:
                 return value
 
+            # update the beta limit
             beta = min(beta, value)
                 
             
