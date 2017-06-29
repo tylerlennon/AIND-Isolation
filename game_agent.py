@@ -37,12 +37,17 @@ def custom_score(game, player):
     # TODO: finish this function!
     # raise NotImplementedError
 
+
+    # test for terminal conditions
     if game.is_loser(player):
         return float("-inf")
 
     if game.is_winner(player):
         return float("inf")
 
+    
+    # this is the improved_score heuristic
+    # tempory testing for now
     own_moves = len(game.get_legal_moves(player))
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
     return float(own_moves - opp_moves)
@@ -73,7 +78,106 @@ def custom_score_2(game, player):
         The heuristic value of the current game state to the specified player.
     """
     # TODO: finish this function!
-    raise NotImplementedError
+    #raise NotImplementedError
+
+    
+    # test for terminal conditions
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    # This heuristic is based on the fact that corner moves poor choices for the isolation player move selection.
+    # This fact also becomes worse as there are less legal moves to select from in later stages of the game.
+    # This heuristic rewards remaining legal moves against the opponent and penelizes both players scores depending on 
+    # the stage of the game, how many corners are remaining in the legal move list and by how many of the corner escape moves
+    # are left
+
+
+    # define the corners of the board
+    top_left     = (0,0)
+    top_right    = (game.width-1, 0)
+    bottom_left  = (0, game.height-1)
+    bottom_right = (game.width-1, game.height-1)           
+    corners = [top_left, top_right, bottom_left, bottom_right]
+    
+    # define the escape moves from the corners
+    corner_escapes = [];
+    for corner in corners:
+        
+        # get the x coordinates for the escape move
+        if (corner[0]==0):
+            x1 = corner[0] + 1
+            x2 = corner[0] + 2
+
+        if (corner[0] == game.width-1):
+            x1 = corner[0] - 1
+            x2 = corner[0] - 2 
+
+        # get the y coordinates for the escape move    
+        if (corner[1] == 0):
+            y1 = corner[1] + 2
+            y2 = corner[1] + 1
+
+        if (corner[1] == game.height-1):
+            y1 = corner[1] - 2
+            y2 = corner[1] - 1
+
+        # add escape moves to the list    
+        corner_escapes.append([x1,y1])
+        corner_escapes.append([x2,y2])               
+
+
+    # get remaining legal moves
+    own_moves = game.get_legal_moves(player)
+    
+    # get the remaining moves that are corners
+    own_corner_moves = [move for move in own_moves if move in corners]
+    
+    # get the remaining corner move escapes
+    own_corner_escape_moves = [move for move in own_corner_moves if move in corner_escapes]
+
+    
+
+    # get remaining legal moves for the opponent
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+
+    # get the remaining moves that are corners for the opponent
+    opp_corner_moves = [move for move in opp_moves if move in corners]
+    
+    # get the remaining corner move escapes for the opponent
+    opp_corner_escape_moves = [move for move in opp_corner_moves if move in corner_escapes]
+    
+
+    
+    # get the stage of the game penalty
+    game_stage_penalty = 1
+    if len(game.get_blank_spaces()) < game.width * game.height / 2.:
+        game_stage_penalty = 2
+    if len(game.get_blank_spaces()) < game.width * game.height / 3.:
+        game_stage_penalty = 3
+    if len(game.get_blank_spaces()) < game.width * game.height / 4.:
+        game_stage_penalty = 4
+
+    
+
+    # get own penalty of escape moves
+    own_escape_penalty = len(own_corner_moves)*2 - len(own_corner_escape_moves)
+    if own_escape_penalty == 0:
+        own_escape_penalty = 1    
+
+    # get opp penalty of escape moves
+    opp_escape_penalty = len(opp_corner_moves)*2 - len(opp_corner_escape_moves)
+    if opp_escape_penalty == 0:
+        opp_escape_penalty = 1
+
+
+    # calculate the heuristic
+    return float( len(own_moves) - 
+        (len(own_corner_moves) * own_escape_penalty * game_stage_penalty) - 
+        len(opp_moves) + 
+        (len(opp_corner_moves) * opp_escape_penalty * game_stage_penalty) )   
 
 
 def custom_score_3(game, player):
@@ -99,7 +203,39 @@ def custom_score_3(game, player):
         The heuristic value of the current game state to the specified player.
     """
     # TODO: finish this function!
-    raise NotImplementedError
+    # raise NotImplementedError
+
+
+    # test for terminal conditions
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    # This heuristic simply returns the difference between the the amount of legal moves and 
+    # the number of blank game locations. The intention is to reward a higher score for games that have the smallest differences
+    # between legal moves and remaining blank game locations.
+    # We may need to adjust this strategy as the legal moves converges on the number of remaining blank game locations
+    # This threshold is TBD
+    # Also there is no consideration regarding the opponent
+    # Temporary testing continues
+
+
+    # get the number of legal moves
+    number_own_moves = len(game.get_legal_moves(player))
+
+    #get the number of legal moves for the opponent
+    #number_opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+
+    # get the remaining blank spaces
+    number_remaining_moves = len(game.get_blank_spaces())
+
+    own_score = (number_own_moves - number_remaining_moves)
+    #opp_score = (number_opp_moves - number_remaining_moves)
+
+
+    return float(own_score)
 
 
 class IsolationPlayer:
@@ -429,8 +565,8 @@ class AlphaBetaPlayer(IsolationPlayer):
         # get a random position
         randomMovePosition = random.randint(0,len(legalMoves)-1)
         
-        # set the best move with a random legal move
-        best_move = legalMoves[randomMovePosition]  #(-1, -1)
+        # set the default best move with a random legal move
+        best_move = legalMoves[randomMovePosition]  
 
         #iterative deepening depth variable
         depth = 1
@@ -503,7 +639,6 @@ class AlphaBetaPlayer(IsolationPlayer):
         #raise NotImplementedError
 
         # initialize the best move/score variables 
-        bestMove = (-1,-1)
         bestScore = float("-inf")
 
         # get legal moves (active player = default)
@@ -511,7 +646,13 @@ class AlphaBetaPlayer(IsolationPlayer):
         
         # terminal test: no legal moves left - return default
         if not legalMoves:
-            return bestMove 
+            return (-1,-1)
+
+        # get a random position
+        randomMovePosition = random.randint(0,len(legalMoves)-1)
+        
+        # set the best move with a random legal move
+        bestMove = legalMoves[randomMovePosition]    
 
         # terminal test: we have reached our depth limit - return the first move 
         if depth == 0:
