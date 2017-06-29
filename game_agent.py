@@ -47,12 +47,30 @@ def custom_score(game, player):
 
     
     # this is the improved_score heuristic
-    # tempory testing for now
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    return float(own_moves - opp_moves)
+    # temporary testing for now
+    #own_moves = len(game.get_legal_moves(player))
+    #opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    #return float(own_moves - opp_moves)
 
 
+    # Short Term Fortune Teller
+    # This heuristic simply calculates the number of escape moves for the current legal move list.  The intent is to reward 
+    # boards that have the most options for escaping. Allows the current iteration so see one level past the current one
+    own_moves = game.get_legal_moves(player)
+    own_escape_count = 0
+
+    for move in own_moves:
+        forecasted_game = game.forecast_move(move)
+        own_escape_count += len(forecasted_game.get_legal_moves(player))
+
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+    opp_escape_count = 0
+
+    for move in opp_moves:
+        forecasted_game = game.forecast_move(move)
+        opp_escape_count += len(forecasted_game.get_legal_moves(game.get_opponent(player)))    
+
+    return float(own_escape_count - opp_escape_count)   
 
 
 def custom_score_2(game, player):
@@ -88,6 +106,7 @@ def custom_score_2(game, player):
     if game.is_winner(player):
         return float("inf")
 
+    # Nobody Puts Baby in the Corner:
     # This heuristic is based on the fact that corner moves poor choices for the isolation player move selection.
     # This fact also becomes worse as there are less legal moves to select from in later stages of the game.
     # This heuristic rewards remaining legal moves against the opponent and penelizes both players scores depending on 
@@ -153,11 +172,11 @@ def custom_score_2(game, player):
     
     # get the stage of the game penalty
     game_stage_penalty = 1
-    if len(game.get_blank_spaces()) < game.width * game.height / 2.:
+    if len(game.get_blank_spaces()) < game.width * game.height / 2:
         game_stage_penalty = 2
-    if len(game.get_blank_spaces()) < game.width * game.height / 3.:
+    if len(game.get_blank_spaces()) < game.width * game.height / 3:
         game_stage_penalty = 3
-    if len(game.get_blank_spaces()) < game.width * game.height / 4.:
+    if len(game.get_blank_spaces()) < game.width * game.height / 4:
         game_stage_penalty = 4
 
     
@@ -213,12 +232,13 @@ def custom_score_3(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    # This heuristic simply returns the difference between the the amount of legal moves and 
-    # the number of blank game locations. The intention is to reward a higher score for games that have the smallest differences
-    # between legal moves and remaining blank game locations.
+    # Keeping My Options Open:    
+    # This heuristic simply returns the sum of the amount of legal moves and 
+    # the number of blank game locations. The intention is to reward a higher score for games that have the 
+    # most options available in each move.
     # We may need to adjust this strategy as the legal moves converges on the number of remaining blank game locations
-    # This threshold is TBD
-    # Also there is no consideration regarding the opponent
+    # This threshold is currently set to when 1/2 of the game locations have been filled
+    # Once the threshold has been hit we move into an agressive imporved score heuristic
     # Temporary testing continues
 
 
@@ -226,16 +246,18 @@ def custom_score_3(game, player):
     number_own_moves = len(game.get_legal_moves(player))
 
     #get the number of legal moves for the opponent
-    #number_opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    number_opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
 
     # get the remaining blank spaces
     number_remaining_moves = len(game.get_blank_spaces())
 
-    own_score = (number_own_moves - number_remaining_moves)
-    #opp_score = (number_opp_moves - number_remaining_moves)
+    if (len(game.get_blank_spaces()) > game.width * game.height / 2):
+        score = (number_own_moves + number_remaining_moves)
+    else:
+        score = number_own_moves-(2*number_opp_moves)
 
 
-    return float(own_score)
+    return float(score)
 
 
 class IsolationPlayer:
